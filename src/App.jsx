@@ -1,66 +1,50 @@
 import { useEffect, useState } from 'react';
 
-const recipeBook = [
-  { keys: ['豚', 'キャベツ'], title: '豚肉とキャベツのスタミナ炒め', time: '15分', emoji: '🥘', description: 'にんにく香る甘辛だれで、ごはんが進む定番おかずです。', steps: ['キャベツはざく切り、豚肉は食べやすい大きさにします。', 'フライパンで豚肉を炒め、色が変わったらキャベツを加えます。', 'しょうゆ・みりん・にんにくで味を整えて完成です。'] },
-  { keys: ['鶏', 'トマト'], title: '鶏肉とトマトのさっぱり煮', time: '20分', emoji: '🍅', description: 'トマトのうま味を生かした、軽やかな主菜です。', steps: ['鶏肉に塩こしょうを振り、こんがり焼きます。', 'くし形に切ったトマトと玉ねぎを加えます。', 'ふたをして8分ほど煮込み、塩で味を調えます。'] },
-  { keys: ['鮭', 'きのこ'], title: '鮭ときのこのバター醤油ソテー', time: '15分', emoji: '🐟', description: '香ばしいバター醤油で、秋らしい味わいに仕上げます。', steps: ['鮭の水気を拭き、小麦粉を薄くまぶします。', 'バターで鮭を両面焼き、きのこを加えます。', 'しょうゆを回しかけ、レモンを添えます。'] },
-  { keys: ['卵'], title: 'ふわふわ卵の中華あんかけ丼', time: '10分', emoji: '🍳', description: '冷蔵庫にある野菜でさっと作れる、やさしい一皿です。', steps: ['お好みの野菜を炒め、鶏がらスープを加えます。', '水溶き片栗粉でとろみをつけます。', '半熟に焼いた卵とごはんに、あんをかけます。'] },
-];
-
-const fallbackRecipe = { title: '冷蔵庫の食材で作る彩りワンプレート', time: '20分', emoji: '🍽️', description: 'いただいた食材を生かして、バランスよく仕上げるアレンジです。', steps: ['食材を火の通りにくい順に切り分けます。', 'フライパンで炒め、塩・こしょうで下味をつけます。', 'お好みの調味料で整え、主食と一緒に盛りつけます。'] };
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzVDpn21dq7gziYnU4PZQGR5JiBix46_QRnVfmKrl2Z5aUWTuJuop3pAEuRCW6Oy0v4qA/exec';
 
-const getHistory = () => {
-  try { return JSON.parse(localStorage.getItem('kondate-history') || '[]'); } catch { return []; }
-};
+const recipes = [
+  { keys: ['豚', 'キャベツ'], title: '豚肉とキャベツのスタミナ炒め', emoji: '🥘', time: '15分', description: 'にんにく香る甘辛だれで、ごはんが進む定番おかず。', steps: ['材料を食べやすい大きさに切る', '豚肉を炒め、キャベツを加える', '調味料を加えてさっと炒める'] },
+  { keys: ['鶏', 'トマト'], title: '鶏肉とトマトのさっぱり煮', emoji: '🍅', time: '20分', description: 'トマトのうま味を生かした、軽やかな主菜です。', steps: ['鶏肉に塩こしょうをふる', '鶏肉と野菜を焼く', 'トマトを加え、ふたをして煮込む'] },
+  { keys: ['鮭'], title: '鮭のバター醤油ソテー', emoji: '🐟', time: '15分', description: '香ばしいバター醤油で、手軽にごちそう感。', steps: ['鮭の水気を拭き、塩をふる', 'バターで両面をこんがり焼く', 'しょうゆを回しかけて完成'] },
+  { keys: ['卵'], title: 'ふわふわ卵の中華あんかけ丼', emoji: '🍳', time: '10分', description: '冷蔵庫にある野菜でさっと作れる一皿です。', steps: ['野菜を炒め、スープを加える', '水溶き片栗粉でとろみをつける', '半熟卵とごはんにあんをかける'] },
+];
+const fallback = { title: '冷蔵庫食材の彩りワンプレート', emoji: '🍽️', time: '20分', description: 'いただいた食材を生かす、バランスのよいアレンジです。', steps: ['食材を火の通りにくい順に切る', 'フライパンで炒めて下味をつける', 'お好みの調味料で味を整える'] };
+const loadHistory = () => { try { return JSON.parse(localStorage.getItem('kondate-history') || '[]'); } catch { return []; } };
 
 function App() {
-  const [ingredients, setIngredients] = useState('豚肉、キャベツ、卵');
+  const [screen, setScreen] = useState('home');
+  const [ingredients, setIngredients] = useState(['豚肉', 'キャベツ', '卵']);
+  const [draft, setDraft] = useState('');
   const [meal, setMeal] = useState('夕食');
-  const [minutes, setMinutes] = useState('15分以内');
+  const [minutes, setMinutes] = useState('10〜15分');
   const [suggestion, setSuggestion] = useState(null);
-  const [history, setHistory] = useState(getHistory);
+  const [history, setHistory] = useState(loadHistory);
   const [sheetUrl, setSheetUrl] = useState(() => localStorage.getItem('google-sheet-webhook') || DEFAULT_SHEET_URL);
   const [showSettings, setShowSettings] = useState(false);
-  const [saveMessage, setSaveMessage] = useState('');
+  const [message, setMessage] = useState('');
 
   useEffect(() => localStorage.setItem('kondate-history', JSON.stringify(history)), [history]);
   useEffect(() => localStorage.setItem('google-sheet-webhook', sheetUrl), [sheetUrl]);
-
+  const addIngredient = () => { const value = draft.trim(); if (value && !ingredients.includes(value)) setIngredients([...ingredients, value]); setDraft(''); };
   const sendToSheet = async (item) => {
-    if (!sheetUrl) {
-      setSaveMessage('スプレッドシート連携URLを設定すると、提案のたびに自動記録されます。');
-      return;
-    }
-    setSaveMessage('スプレッドシートへ自動記録中…');
-    const payload = { date: new Date().toISOString(), dish: item.title, ingredients: item.ingredients, meal: item.meal, cookingTime: item.time, requestedTime: item.minutes, steps: item.steps.join('\n') };
-    try {
-      await fetch(sheetUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-      setSaveMessage('この提案はスプレッドシートに自動記録されました。');
-    } catch { setSaveMessage('自動記録できませんでした。連携URLをご確認ください。'); }
+    if (!sheetUrl) { setMessage('スプレッドシートの連携URLを設定してください。'); return; }
+    const payload = { date: new Date().toISOString(), dish: item.title, ingredients: item.ingredients.join('、'), meal: item.meal, cookingTime: item.time, requestedTime: item.minutes, steps: item.steps.join('\n') };
+    try { await fetch(sheetUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); setMessage('スプレッドシートに自動記録しました'); } catch { setMessage('記録できませんでした'); }
   };
-
   const createSuggestion = () => {
-    const recipe = recipeBook.find((item) => item.keys.every((key) => ingredients.includes(key)))
-      || recipeBook.find((item) => item.keys.some((key) => ingredients.includes(key)))
-      || fallbackRecipe;
+    const joined = ingredients.join(' ');
+    const recipe = recipes.find((item) => item.keys.every((key) => joined.includes(key))) || recipes.find((item) => item.keys.some((key) => joined.includes(key))) || fallback;
     const item = { ...recipe, id: Date.now(), ingredients, meal, minutes, createdAt: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) };
-    setSuggestion(item);
-    setHistory((previous) => [item, ...previous.filter((entry) => entry.title !== item.title)].slice(0, 6));
-    sendToSheet(item);
+    setSuggestion(item); setHistory((prev) => [item, ...prev].slice(0, 12)); setScreen('suggestion'); setMessage(''); sendToSheet(item);
   };
+  const nav = (target) => { if (target === 'suggestion' && !suggestion) return; setScreen(target); };
 
-  return <div className="app-shell">
-    <header className="topbar"><div className="brand"><span className="pot">♨</span><span>AKI MENU</span></div><button className="settings-button" onClick={() => setShowSettings(!showSettings)}>⚙ 連携設定</button></header>
-    {showSettings && <section className="settings-panel"><div><strong>Googleスプレッドシート連携</strong><p>Google Apps Scriptで公開したWebアプリのURLを入力してください。</p></div><input value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} placeholder="https://script.google.com/macros/s/.../exec" /><a href="#guide">設定方法を見る →</a></section>}
-    <main>
-      <section className="intro"><span className="eyebrow">今日のごはん、もう迷わない</span><h1>冷蔵庫の食材から<br /><em>おいしい一皿</em>を提案します。</h1><p>食材と気分を入力するだけ。AIが今日にぴったりの献立を考えます。</p></section>
-      <section className="input-card"><div className="card-heading"><span className="heading-number">01</span><div><span className="section-kicker">WHAT'S IN YOUR KITCHEN?</span><h2>食材を教えてください</h2></div></div><label>使いたい食材 <span>（カンマ区切りで入力）</span><div className="ingredient-input"><span>🥬</span><input value={ingredients} onChange={(e) => setIngredients(e.target.value)} placeholder="例：豚肉、キャベツ、卵" /></div></label><div className="choice-row"><div><label>いつ食べる？</label><div className="pills">{['朝食', '昼食', '夕食'].map((value) => <button key={value} className={meal === value ? 'selected' : ''} onClick={() => setMeal(value)}>{value}</button>)}</div></div><div><label>調理時間</label><select value={minutes} onChange={(e) => setMinutes(e.target.value)}><option>10分以内</option><option>15分以内</option><option>30分以内</option><option>時間はある</option></select></div></div><button className="suggest-button" onClick={createSuggestion}><span>✦</span> AIに献立を考えてもらう</button></section>
-      <section className="result-section"><div className="result-label"><span>02</span><div><span className="section-kicker">AI'S SUGGESTION</span><h2>AIの献立提案</h2></div></div>{suggestion ? <article className="recipe-card"><div className="recipe-visual"><span>{suggestion.emoji}</span><small>{suggestion.time}で完成</small></div><div className="recipe-content"><div className="recipe-title"><div><p>今日の{suggestion.meal}におすすめ</p><h3>{suggestion.title}</h3></div><span className="time-pill">⏱ {suggestion.time}</span></div><p className="description">{suggestion.description}</p><div className="used-ingredients">使用食材：{suggestion.ingredients}</div><ol>{suggestion.steps.map((step, i) => <li key={i}>{step}</li>)}</ol>{saveMessage && <p className="save-message">{saveMessage}</p>}</div></article> : <div className="empty-state"><div>🍲</div><p>食材を入力して、献立を提案してもらいましょう</p></div>}</section>
-      {history.length > 0 && <section className="history-section"><div className="history-heading"><div><span className="section-kicker">RECENTLY SUGGESTED</span><h2>最近の提案</h2></div><span>保存件数 {history.length}</span></div><div className="history-grid">{history.map((item) => <button className="history-card" onClick={() => setSuggestion(item)} key={item.id}><span>{item.emoji}</span><div><small>{item.createdAt}・{item.meal}</small><strong>{item.title}</strong></div><i>›</i></button>)}</div></section>}
-      <section id="guide" className="guide"><h2>Googleスプレッドシートの設定</h2><p>スプレッドシートで「拡張機能 → Apps Script」を開き、POSTデータをシートへ追記するスクリプトをWebアプリとしてデプロイします。発行された <code>/exec</code> URLを上部の「連携設定」に貼り付けると、提案をワンタップで記録できます。</p></section>
-    </main><footer>AKI MENU — 毎日の「何作ろう？」を、少し楽しく。</footer>
-  </div>;
+  const Header = ({ title, back }) => <header className="app-header">{back ? <button className="back" onClick={() => setScreen(back)}>‹</button> : <span className="header-space" />}<div className="logo"><b>♨</b> AKI MENU</div><button className="gear" onClick={() => setShowSettings(!showSettings)}>⚙</button></header>;
+  const Home = () => <><Header /><div className="home-page"><div className="home-kicker">今日のごはん、もう迷わない</div><h1>おいしい献立を<br />見つけよう。</h1><p>冷蔵庫にある食材から、<br />今日にぴったりの一皿を提案します。</p><button className="big-create" onClick={() => setScreen('input')}><span>🍴</span><strong>献立を作る</strong><small>食材を入力してはじめる</small></button><div className="quick-title">クイック開始</div><div className="quick-grid"><button onClick={() => { setMeal('朝食'); setScreen('input'); }}>☀<span>朝日差し</span></button><button onClick={() => { setMinutes('10分以内'); setScreen('input'); }}>⚡<span>お急ぎ</span></button><button onClick={() => { setScreen('history'); }}>◴<span>履歴を見る</span></button></div></div></>;
+  const Input = () => <><Header back="home" /><div className="page input-page"><div className="page-mark">01</div><h2>食材を入力</h2><p className="sub">冷蔵庫にある食材を追加してください</p><div className="add-row"><input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addIngredient()} placeholder="食材を入力" /><button onClick={addIngredient}>＋</button></div><div className="chips">{ingredients.map((item) => <span key={item}>{item}<button onClick={() => setIngredients(ingredients.filter((value) => value !== item))}>×</button></span>)}</div><section className="option"><label>食べる時間</label><div className="toggle">{['朝食', '昼食', '夕食'].map((item) => <button key={item} onClick={() => setMeal(item)} className={meal === item ? 'on' : ''}>{item}</button>)}</div></section><section className="option"><label>調理時間</label><div className="toggle time-toggle">{['10分以内', '10〜15分', '30分以内'].map((item) => <button key={item} onClick={() => setMinutes(item)} className={minutes === item ? 'on' : ''}>{item}</button>)}</div></section><button className="primary-action" disabled={!ingredients.length} onClick={createSuggestion}>✦ AIに献立を考えてもらう</button></div></>;
+  const Suggestion = () => <><Header back="input" />{suggestion ? <div className="page suggestion-page"><div className="page-mark">02</div><p className="eyebrow">AI'S SUGGESTION</p><h2>AIの献立提案</h2><div className="dish-visual"><span>{suggestion.emoji}</span></div><span className="meal-badge">今日の{suggestion.meal}</span><h3>{suggestion.title}</h3><p className="dish-desc">{suggestion.description}</p><div className="info-line"><span>⏱ {suggestion.time}</span><span>食材 {suggestion.ingredients.length}品</span></div><div className="steps"><b>作り方</b>{suggestion.steps.map((step, index) => <p key={step}><i>{index + 1}</i>{step}</p>)}</div><p className="saved-message">✓ {message || '献立を作成しました'}</p><button className="secondary-action" onClick={() => setScreen('input')}>別の献立を考える</button></div> : null}</>;
+  const History = () => <><Header back="home" /><div className="page history-page"><div className="page-mark">03</div><p className="eyebrow">MY MENU LOG</p><h2>献立の履歴</h2><p className="sub">これまでに提案したメニュー</p>{history.length ? <div className="history-list">{history.map((item) => <button key={item.id} onClick={() => { setSuggestion(item); setScreen('suggestion'); }}><span className="history-emoji">{item.emoji}</span><span><small>{item.createdAt}・{item.meal}</small><strong>{item.title}</strong><em>⏱ {item.time}</em></span><i>›</i></button>)}</div> : <div className="no-history">🍲<br />まだ提案履歴がありません</div>}</div></>;
+  return <div className="site"><div className="phone"><div className="speaker" />{showSettings && <div className="settings"><b>Googleスプレッドシート連携</b><input value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} /><small>献立の提案時に自動で記録されます。</small></div>}{screen === 'home' && <Home />}{screen === 'input' && <Input />}{screen === 'suggestion' && <Suggestion />}{screen === 'history' && <History />}<nav>{[['home', '⌂', 'ホーム'], ['input', '✎', '入力'], ['suggestion', '✦', '提案'], ['history', '◴', '履歴']].map(([target, icon, label]) => <button key={target} className={screen === target ? 'active' : ''} onClick={() => nav(target)}><span>{icon}</span>{label}</button>)}</nav></div><aside className="desktop-copy"><span>AKI MENU</span><h2>毎日の献立を、<br />もっと手軽に。</h2><p>食材を入力するだけで、<br />あなたのためのレシピを提案します。</p><div>ホーム → 食材入力 → AI提案 → 履歴</div></aside></div>;
 }
 
 export default App;
