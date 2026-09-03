@@ -1,0 +1,12 @@
+const encoder = new TextEncoder();
+export const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', ...headers } });
+export const body = async (request) => { try { return await request.json(); } catch { return {}; } };
+const toBase64 = (bytes) => btoa(String.fromCharCode(...bytes));
+const fromBase64 = (text) => Uint8Array.from(atob(text), (char) => char.charCodeAt(0));
+export const hashPassword = async (password, saltText) => { const salt = saltText ? fromBase64(saltText) : crypto.getRandomValues(new Uint8Array(16)); const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']); const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 210000, hash: 'SHA-256' }, key, 256); return { hash: toBase64(new Uint8Array(bits)), salt: toBase64(salt) }; };
+export const secureEqual = (first, second) => { if (first.length !== second.length) return false; let result = 0; for (let i = 0; i < first.length; i += 1) result |= first.charCodeAt(i) ^ second.charCodeAt(i); return result === 0; };
+export const readCookie = (request, name) => { const value = request.headers.get('Cookie') || ''; return value.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1); };
+export const createSession = async (db, userId) => { const token = toBase64(crypto.getRandomValues(new Uint8Array(32))).replace(/[+/=]/g, ''); const expiresAt = new Date(Date.now() + 1209600000).toISOString(); await db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').bind(token, userId, expiresAt).run(); return token; };
+export const sessionCookie = (token) => `aki_menu_session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1209600`;
+export const expiredCookie = 'aki_menu_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
+export const writeLoginLog = async (env, user, event) => { if (!env.LOGIN_LOG_URL) return; try { await fetch(env.LOGIN_LOG_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ event, date: new Date().toISOString(), username: user.username, email: user.email }) }); } catch { /* ログ失敗で認証を中断しない */ } };

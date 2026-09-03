@@ -1,0 +1,2 @@
+import { json, readCookie } from './_shared';
+export async function onRequestGet({ request, env }) { const token = readCookie(request, 'aki_menu_session'); if (!token) return json({ user: null }); const user = await env.DB.prepare('SELECT users.id, users.username, users.email FROM sessions JOIN users ON users.id = sessions.user_id WHERE sessions.token = ? AND sessions.expires_at > ?').bind(token, new Date().toISOString()).first(); return json({ user: user || null }); }
