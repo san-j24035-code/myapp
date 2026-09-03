@@ -10,10 +10,16 @@ const recipes = [
 ];
 const fallback = { title: '冷蔵庫食材の彩りワンプレート', emoji: '🍽️', time: '20分', description: 'いただいた食材を生かす、バランスのよいアレンジです。', steps: ['食材を火の通りにくい順に切る', 'フライパンで炒めて下味をつける', 'お好みの調味料で味を整える'] };
 const loadHistory = () => { try { return JSON.parse(localStorage.getItem('kondate-history') || '[]'); } catch { return []; } };
+const pickRecipe = (ingredients) => {
+  const joined = ingredients.join(' ');
+  const ranked = recipes.map((recipe) => ({ recipe, score: recipe.keys.filter((key) => joined.includes(key)).length }));
+  const best = ranked.sort((a, b) => b.score - a.score)[0];
+  return best?.score ? best.recipe : fallback;
+};
 
 function App() {
   const [screen, setScreen] = useState('home');
-  const [ingredients, setIngredients] = useState(['豚肉', 'キャベツ', '卵']);
+  const [ingredients, setIngredients] = useState([]);
   const [draft, setDraft] = useState('');
   const draftRef = useRef(null);
   const [meal, setMeal] = useState('夕食');
@@ -33,8 +39,7 @@ function App() {
     try { await fetch(sheetUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); setMessage('スプレッドシートに自動記録しました'); } catch { setMessage('記録できませんでした'); }
   };
   const createSuggestion = () => {
-    const joined = ingredients.join(' ');
-    const recipe = recipes.find((item) => item.keys.every((key) => joined.includes(key))) || recipes.find((item) => item.keys.some((key) => joined.includes(key))) || fallback;
+    const recipe = pickRecipe(ingredients);
     const item = { ...recipe, id: Date.now(), ingredients, meal, minutes, createdAt: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) };
     setSuggestion(item); setHistory((prev) => [item, ...prev].slice(0, 12)); setScreen('suggestion'); setMessage(''); sendToSheet(item);
   };
