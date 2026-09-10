@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新規登録 | AKI MENU</title>
+    <style>
+      :root { color: #123d4b; font-family: Georgia, 'Yu Mincho', serif; background: #f4f1e9; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top left, #fffaf1, #e8f0ed); }
+      main { width: min(100%, 520px); padding: 42px clamp(24px, 7vw, 56px); background: #fffdf9; border-radius: 28px; box-shadow: 0 18px 50px rgb(18 61 75 / 12%); }
+      .logo { color: #123d4b; font: 700 25px Arial, sans-serif; letter-spacing: 1px; }
+      .logo b { color: #dc6c45; font-size: 30px; margin-right: 8px; }
+      .kicker { margin: 46px 0 12px; color: #dc6c45; font: 700 12px Arial, sans-serif; letter-spacing: 2px; }
+      h1 { margin: 0 0 12px; font-size: clamp(30px, 7vw, 42px); }
+      .description { color: #617681; line-height: 1.8; }
+      label { display: block; margin-top: 26px; font: 700 15px Arial, sans-serif; }
+      input { width: 100%; margin-top: 10px; padding: 16px; border: 1px solid #d3ddd8; border-radius: 10px; font-size: 16px; }
+      input:focus { outline: 3px solid rgb(220 108 69 / 18%); border-color: #dc6c45; }
+      button { width: 100%; margin-top: 28px; padding: 16px; border: 0; border-radius: 10px; color: white; background: #dc6c45; font-size: 17px; font-weight: 700; cursor: pointer; }
+      button:disabled { opacity: .55; cursor: wait; }
+      .back { display: block; margin: 20px auto 0; padding: 0; color: #28606b; background: transparent; text-decoration: underline; font-size: 14px; font-weight: 400; }
+      .message { min-height: 24px; margin: 18px 0 0; color: #c54f3f; line-height: 1.6; }
+      .success { padding: 16px; border-radius: 10px; background: #eef6ef; color: #23633b; line-height: 1.8; }
+      .password { display: block; margin-top: 8px; font: 700 20px Arial, sans-serif; word-break: break-all; }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="logo"><b>♨</b> AKI MENU</div>
+      <p class="kicker">WELCOME TO YOUR KITCHEN</p>
+      <h1>新規登録</h1>
+      <p class="description">メールアドレスを登録して、AKI MENUをはじめましょう。</p>
+
+      <section id="request-step">
+        <form id="request-form">
+          <label for="email">メールアドレス</label>
+          <input id="email" type="email" autocomplete="email" required placeholder="example@mail.com" />
+          <p id="request-message" class="message" role="alert"></p>
+          <button id="request-button" type="submit">認証コードを送信</button>
+        </form>
+      </section>
+
+      <section id="verify-step" class="hidden">
+        <p class="description">入力したメールアドレスに届いた8桁の認証コードを入力してください。</p>
+        <form id="verify-form">
+          <label for="code">認証コード</label>
+          <input id="code" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" required placeholder="12345678" />
+          <p id="verify-message" class="message" role="alert"></p>
+          <button id="verify-button" type="submit">認証して登録する</button>
+        </form>
+        <button id="back-button" class="back" type="button">メールアドレスを変更する</button>
+      </section>
+
+      <section id="success-step" class="hidden">
+        <div class="success">登録に成功しました！<br />このパスワードでログインしましょう。<span id="password" class="password"></span></div>
+        <button id="login-button" type="button">ログイン画面はこちら</button>
+      </section>
+    </main>
+    <script>
+      const API_URL = 'https://script.google.com/macros/s/AKfycbzVDpn21dq7gziYnU4PZQGR5JiBix46_QRnVfmKrl2Z5aUWTuJuop3pAEuRCW6Oy0v4qA/exec';
+      const requestStep = document.getElementById('request-step');
+      const verifyStep = document.getElementById('verify-step');
+      const successStep = document.getElementById('success-step');
+      const emailInput = document.getElementById('email');
+      const requestMessage = document.getElementById('request-message');
+      const verifyMessage = document.getElementById('verify-message');
+      const setLoading = (button, loading) => { button.disabled = loading; button.textContent = loading ? '処理中…' : button.dataset.label; };
+      const callApi = (params) => new Promise((resolve, reject) => {
+        const callback = `akiMenuCallback${Date.now()}`;
+        const script = document.createElement('script');
+        const query = new URLSearchParams({ ...params, callback });
+        window[callback] = (data) => { cleanup(); resolve(data); };
+        script.onerror = () => { cleanup(); reject(new Error('通信に失敗しました。')); };
+        script.src = `${API_URL}?${query}`;
+        document.body.appendChild(script);
+        function cleanup() { delete window[callback]; script.remove(); }
+      });
+      document.getElementById('request-button').dataset.label = '認証コードを送信';
+      document.getElementById('verify-button').dataset.label = '認証して登録する';
+      document.getElementById('request-form').addEventListener('submit', async (event) => {
+        event.preventDefault(); requestMessage.textContent = '';
+        const button = document.getElementById('request-button'); setLoading(button, true);
+        try {
+          const data = await callApi({ mode: 'request', email: emailInput.value.trim() });
+          if (!data.ok) throw new Error(data.error || '登録リクエストに失敗しました。');
+          requestStep.classList.add('hidden'); verifyStep.classList.remove('hidden');
+        } catch (error) { requestMessage.textContent = error.message; }
+        finally { setLoading(button, false); }
+      });
+      document.getElementById('verify-form').addEventListener('submit', async (event) => {
+        event.preventDefault(); verifyMessage.textContent = '';
+        const button = document.getElementById('verify-button'); setLoading(button, true);
+        try {
+          const data = await callApi({ mode: 'verify', email: emailInput.value.trim(), code: document.getElementById('code').value.trim() });
+          if (!data.ok) throw new Error(data.error || '認証に失敗しました。');
+          alert(`成功しました！ログイン画面に戻ります\n\nこのパスワードでログインしましょう！\n${data.password}`);
+          window.location.href = './index.html';
+        } catch (error) { verifyMessage.textContent = error.message; }
+        finally { setLoading(button, false); }
+      });
+      document.getElementById('back-button').addEventListener('click', () => { verifyStep.classList.add('hidden'); requestStep.classList.remove('hidden'); });
+      document.getElementById('login-button').addEventListener('click', () => { window.location.href = './index.html'; });
+    </script>
+  </body>
+</html>
