@@ -18,7 +18,10 @@ const buildIngredientRecipe = (ingredients, minutes) => {
   const side = vegetables.slice(0, 2).join('と');
   const title = protein && side ? `${main}と${side}の甘辛炒め` : protein ? `${main}の香ばしソテー` : ingredients.length > 1 ? `${ingredients.slice(0, 2).join('と')}の彩り炒め` : `${main}のやさしい一皿`;
   const emoji = /鮭|魚|えび|海老/.test(main) ? '🐟' : /卵/.test(names) ? '🍳' : /肉|牛|豚|鶏|ひき肉/.test(main) ? '🥘' : '🍽️';
-  return { title, emoji, time: minutes === '10分以内' ? '10分' : minutes === '30分以内' ? '25分' : '15分', description: `${names}を主役に、素材の味を生かして仕上げる一皿です。`, steps: [`${names}を食べやすい大きさに切る`, 'フライパンで火の通りにくい食材から順に加熱する', 'しょうゆ・みりんなどで甘辛く味を整える'] };
+  const steps = protein
+    ? [`${main}は食べやすい大きさに切り、塩・こしょうを軽くふります。${side ? `${side}も食べやすく切っておきます。` : ''}`, `${main}をフライパンで焼き、表面が香ばしくなったら${side || '残りの食材'}を加えて炒め合わせます。`, '火が通ったら、しょうゆ・みりんなどを加えて全体にからめます。', '器に盛り付け、熱いうちにいただきます。']
+    : [`${names}を食べやすい大きさに切り、水気を拭いておきます。`, 'フライパンに油を熱し、火の通りにくい食材から順に炒めます。', '全体がしんなりしたら、塩・こしょうで味を整えます。', '器に盛り付け、お好みで薬味を添えて完成です。'];
+  return { title, emoji, time: minutes === '10分以内' ? '10分' : minutes === '30分以内' ? '25分' : '15分', description: `${names}のうま味を引き出し、香ばしく炒めて甘辛だれで仕上げる家庭料理です。`, steps };
 };
 const pickRecipe = (ingredients) => {
   const joined = ingredients.join(' ');
