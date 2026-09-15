@@ -16,4 +16,28 @@
   .desktop-copy {
     display: none;
   }
+
+  .home-page {
+    overflow-y: auto;
+    padding-top: 32px;
+    padding-bottom: 72px;
+  }
+
+  .home-page h1 {
+    font-size: 28px;
+    margin: 10px 0;
+  }
+
+  .big-create {
+    margin: 16px 0;
+    padding: 16px 15px;
+  }
+
+  .big-create span {
+    font-size: 26px;
+  }
+
+  .quick-grid button {
+    height: 64px;
+  }
 }
