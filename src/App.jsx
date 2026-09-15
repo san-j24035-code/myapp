@@ -12,7 +12,13 @@ const fallback = { title: '冷蔵庫食材の彩りワンプレート', emoji: '
 const loadHistory = () => { try { return JSON.parse(localStorage.getItem('kondate-history') || '[]'); } catch { return []; } };
 const buildIngredientRecipe = (ingredients, minutes) => {
   const names = ingredients.join('、');
-  return { title: `${names}の簡単フライパン料理`, emoji: '🍳', time: minutes === '10分以内' ? '10分' : minutes === '30分以内' ? '25分' : '15分', description: `${names}を主役に、素材の味を生かして仕上げる一皿です。`, steps: [`${names}を食べやすい大きさに切る`, 'フライパンで火の通りにくい食材から順に加熱する', '塩・こしょうやお好みの調味料で味を整える'] };
+  const protein = ingredients.find((item) => /牛|豚|鶏|ひき肉|肉|鮭|魚|えび|海老|豆腐/.test(item));
+  const vegetables = ingredients.filter((item) => item !== protein);
+  const main = protein || ingredients[0];
+  const side = vegetables.slice(0, 2).join('と');
+  const title = protein && side ? `${main}と${side}の甘辛炒め` : protein ? `${main}の香ばしソテー` : ingredients.length > 1 ? `${ingredients.slice(0, 2).join('と')}の彩り炒め` : `${main}のやさしい一皿`;
+  const emoji = /鮭|魚|えび|海老/.test(main) ? '🐟' : /卵/.test(names) ? '🍳' : /肉|牛|豚|鶏|ひき肉/.test(main) ? '🥘' : '🍽️';
+  return { title, emoji, time: minutes === '10分以内' ? '10分' : minutes === '30分以内' ? '25分' : '15分', description: `${names}を主役に、素材の味を生かして仕上げる一皿です。`, steps: [`${names}を食べやすい大きさに切る`, 'フライパンで火の通りにくい食材から順に加熱する', 'しょうゆ・みりんなどで甘辛く味を整える'] };
 };
 const pickRecipe = (ingredients) => {
   const joined = ingredients.join(' ');
