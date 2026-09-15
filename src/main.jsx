@@ -4,6 +4,7 @@ import Root from './Root';
 import './styles.css';
 import './mobile-fixes.css';
 import './auth.css';
+import './app-layout.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

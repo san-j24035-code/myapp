@@ -1,0 +1,19 @@
+@media (min-width: 761px) {
+  .site {
+    gap: 0;
+    padding: 24px;
+  }
+
+  .phone {
+    width: min(100%, 405px);
+    height: min(800px, calc(100vh - 48px));
+    border: 0;
+    border-radius: 22px;
+    box-shadow: 0 20px 48px #1d39352b;
+  }
+
+  .speaker,
+  .desktop-copy {
+    display: none;
+  }
+}
