@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const apiOrigin = env.VITE_API_ORIGIN;
   return {
     plugins: [react()],
-    base: '/myapp/',
+    base: './',
     build: { rollupOptions: { input: { main: 'index.html', regist: 'regist.html' } } },
     server: apiOrigin ? { proxy: { '/api': { target: apiOrigin, changeOrigin: true } } } : undefined,
   };
