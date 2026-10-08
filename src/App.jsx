@@ -15,11 +15,18 @@ const cookingStyles = [
   { id: 'grill', label: '焼く' },
   { id: 'steam', label: '蒸す' },
   { id: 'soup', label: 'スープにする' },
+  { id: 'japanese', label: '和風のだし・味噌味' },
+  { id: 'chinese', label: '中華風の香味・ごま風味' },
+  { id: 'korean', label: '韓国風の甘辛味' },
+  { id: 'western', label: '洋風のハーブ・バター味' },
+  { id: 'curry', label: 'スパイスカレー風' },
+  { id: 'vinegar', label: '甘酢・さっぱり味' },
+  { id: 'salad', label: 'サラダ仕立て', isAvailable: (ingredients) => ingredients.some((item) => /キャベツ|レタス|白菜|きゅうり|胡瓜|トマト|玉ねぎ|たまねぎ|人参|にんじん|大根|ほうれん草|小松菜|ブロッコリー|アボカド|きのこ/.test(item)) },
 ];
 const loadHistory = () => { try { return JSON.parse(localStorage.getItem('kondate-history') || '[]'); } catch { return []; } };
-const chooseCookingStyle = (history) => {
-  const recentlyUsed = new Set(history.slice(0, 3).map((item) => item.cookingStyle).filter(Boolean));
-  const available = cookingStyles.filter((style) => !recentlyUsed.has(style.id));
+const chooseCookingStyle = (history, ingredients) => {
+  const recentlyUsed = new Set(history.slice(0, 4).map((item) => item.cookingStyle).filter(Boolean));
+  const available = cookingStyles.filter((style) => !recentlyUsed.has(style.id) && (!style.isAvailable || style.isAvailable(ingredients)));
   const choices = available.length ? available : cookingStyles;
   return choices[Math.floor(Math.random() * choices.length)];
 };
@@ -33,6 +40,13 @@ const buildIngredientRecipe = (ingredients, minutes, cookingStyle) => {
     grill: { title: `${names}のこんがり焼き`, description: '表面を香ばしく焼き、素材のうま味を引き出します。', steps: [`${names}を食べやすい大きさに切り、水気を拭きます。`, 'フライパンに油を熱し、食材を並べて焼き色をつけます。', '裏返して中まで火を通し、塩やしょうゆで味付けします。', '器に盛り付けて完成です。'] },
     steam: { title: `${names}のふっくら蒸し`, description: '少量の水で蒸し上げる、素材の味を楽しむ一皿です。', steps: [`${names}を火が通りやすい大きさに切ります。`, 'フライパンに食材と水大さじ2を入れてふたをします。', '中火で蒸し、中まで火が通ったら塩やポン酢などで味を整えます。', '器に盛り付けて完成です。'] },
     soup: { title: `${names}の具だくさんスープ`, description: '食材のうま味が溶け込んだ、温かいスープです。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水とだしを入れて火にかけ、火の通りにくい食材から加えます。', '具材が柔らかくなるまで煮て、塩やしょうゆで味を整えます。', '器によそって完成です。'] },
+    japanese: { title: `${names}の和風だし仕立て`, description: 'だしとしょうゆのうま味を生かした、落ち着く和風の一皿です。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋にだしとしょうゆを入れて温め、食材を加えます。', '食材に火が通るまで煮含め、みそや薬味で味を整えます。', '器に盛り付けて完成です。'] },
+    chinese: { title: `${names}の中華風うま塩仕立て`, description: 'ごま油と香味の風味をきかせた中華風の味わいです。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水と鶏がらスープの素を入れ、食材を火の通りにくい順に加えます。', '中まで火を通し、塩・しょうゆ・ごま油で味を整えます。', '器に盛り付けて完成です。'] },
+    korean: { title: `${names}の韓国風甘辛煮`, description: 'コチュジャンやごま油を使った、甘辛くコクのある味付けです。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水、コチュジャン、しょうゆを入れて混ぜます。', '食材を加えて火が通るまで煮込み、ごま油で風味を整えます。', '器に盛り付けて完成です。'] },
+    western: { title: `${names}の洋風ハーブ焼き`, description: 'バターとハーブの香りをまとわせた洋風の焼き料理です。', steps: [`${names}を食べやすい大きさに切ります。`, 'フライパンにバターを溶かし、食材を並べて焼き色をつけます。', '裏返して中まで火を通し、塩・こしょうとハーブで味を整えます。', '器に盛り付けて完成です。'] },
+    curry: { title: `${names}のスパイスカレー煮`, description: '香辛料の香りを生かした、食材たっぷりのカレー風煮込みです。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋で食材を軽く炒め、水とカレー粉を加えます。', '食材が柔らかくなるまで煮込み、塩で味を整えます。', '器に盛り付けて完成です。'] },
+    vinegar: { title: `${names}のさっぱり甘酢仕立て`, description: '酢の酸味とほどよい甘さで、軽やかに食べられます。', steps: [`${names}を食べやすい大きさに切ります。`, '肉・魚介・卵はフライパンなどで中まで火を通します。', '酢、砂糖、しょうゆを混ぜ、食材にからめて味をなじませます。', '器に盛り付けて完成です。'] },
+    salad: { title: `${names}の彩りサラダ`, description: '素材の食感を楽しむ、さっぱりしたサラダ仕立てです。', steps: [`${names}を食べやすい大きさに切ります。`, '肉・魚介・卵は中まで加熱し、粗熱を取ります。', '酢、油、塩などを混ぜてドレッシングを作ります。', '食材を和えて器に盛り付けます。'] },
   };
   const recipe = methods[cookingStyle] || methods.simmer;
   return { ...recipe, emoji, time: minutes === '10分以内' ? '10分' : minutes === '30分以内' ? '25分' : '15分' };
@@ -75,7 +89,7 @@ function App() {
   };
   const createSuggestion = async () => {
     setGenerating(true); setMessage('');
-    const cookingStyle = chooseCookingStyle(history);
+    const cookingStyle = chooseCookingStyle(history, ingredients);
     let recipe;
     try { recipe = await requestRecipe(ingredients, meal, minutes, cookingStyle.id); } catch { recipe = buildIngredientRecipe(ingredients, minutes, cookingStyle.id); }
     const item = { ...recipe, cookingStyle: cookingStyle.id, id: Date.now(), ingredients, meal, minutes, createdAt: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) };
