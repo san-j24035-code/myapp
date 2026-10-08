@@ -8,12 +8,21 @@ const extractJson = (text) => {
   return JSON.parse(cleaned);
 };
 
+const cookingStyleLabels = {
+  'stir-fry': '炒める',
+  simmer: '煮る',
+  grill: '焼く',
+  steam: '蒸す',
+  soup: 'スープにする',
+};
+
 export async function onRequestPost({ request, env }) {
   let input;
   try { input = await request.json(); } catch { return json({ error: '入力形式が正しくありません。' }, 400); }
   const ingredients = Array.isArray(input.ingredients) ? input.ingredients.map(String).map((value) => value.trim()).filter(Boolean).slice(0, 12) : [];
   if (!ingredients.length) return json({ error: '食材を1つ以上入力してください。' }, 400);
   if (!env.GEMINI_API_KEY) return json({ error: 'AI_API_KEY_NOT_CONFIGURED' }, 503);
+  const cookingStyle = cookingStyleLabels[input.cookingStyle] || '食材に合う調理法';
 
   const model = env.GEMINI_MODEL || 'gemini-2.0-flash';
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
@@ -21,6 +30,7 @@ export async function onRequestPost({ request, env }) {
     'あなたは日本の家庭料理に詳しい献立AIです。',
     `必ず次の入力食材をすべて主役または具材として使ってください: ${ingredients.join('、')}`,
     `食べる時間: ${input.meal || '夕食'}。調理時間: ${input.minutes || '10〜15分'}。`,
+    `今回の調理法は「${cookingStyle}」です。この方法を料理名と手順の中心にしてください。炒め物に偏らず、指定された方法を守ってください。`,
     '入力にない食材を主役に置き換えないでください。調味料と水は追加して構いません。',
     'レシピサイトの掲載文のように、家庭で作る場面が想像できる自然な日本語で書いてください。手順は下ごしらえ、加熱、味付け、盛り付けの順に3〜5個にしてください。',
     '次のJSONだけを返してください。説明文やMarkdownは不要です。',
@@ -31,7 +41,7 @@ export async function onRequestPost({ request, env }) {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4, responseMimeType: 'application/json' } }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: 'application/json' } }),
     });
     const data = await response.json();
     if (!response.ok) return json({ error: 'AIサービスに接続できませんでした。' }, 502);

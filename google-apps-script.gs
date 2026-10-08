@@ -58,8 +58,8 @@ function requestRegistration_(spreadsheet, email) {
 
   MailApp.sendEmail({
     to: email,
-    subject: 'AKI MENU 認証コード',
-    body: `AKI MENUの新規登録を受け付けました。\n\n認証コード：${authCode}\n\n認証画面でこのコードを入力してください。`
+    subject: 'COOK MENU 認証コード',
+    body: `COOK MENUの新規登録を受け付けました。\n\n認証コード：${authCode}\n\n認証画面でこのコードを入力してください。`
   });
   return { ok: true, message: '認証コードをメールで送信しました。' };
 }
