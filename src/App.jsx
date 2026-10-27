@@ -30,40 +30,77 @@ const chooseCookingStyle = (history, ingredients) => {
   const choices = available.length ? available : cookingStyles;
   return choices[Math.floor(Math.random() * choices.length)];
 };
-const buildIngredientRecipe = (ingredients, minutes, cookingStyle) => {
+const buildIngredientRecipe = (ingredients, minutes, cookingStyle, history) => {
   const names = ingredients.join('、');
   const protein = ingredients.find((item) => /牛|豚|鶏|ひき肉|肉|鮭|魚|えび|海老|豆腐/.test(item));
   const emoji = /鮭|魚|えび|海老/.test(names) ? '🐟' : /卵/.test(names) ? '🍳' : protein ? '🥘' : '🍽️';
-  const seasoningsByStyle = {
-    'stir-fry': ['しょうゆ 小さじ1', '塩・こしょう 少々', 'サラダ油 小さじ1'],
-    simmer: ['しょうゆ 大さじ1', 'みりん 大さじ1', '水 100ml'],
-    grill: ['塩・こしょう 少々', 'サラダ油 小さじ1'],
-    steam: ['塩 少々', '水 大さじ2'],
-    soup: ['塩 小さじ1/3', 'こしょう 少々', '水 300ml'],
-    japanese: ['しょうゆ 小さじ2', 'みりん 小さじ2', '水 100ml'],
-    chinese: ['鶏ガラスープの素 小さじ1', 'しょうゆ 小さじ1', 'ごま油 小さじ1'],
-    korean: ['しょうゆ 小さじ1', '砂糖 小さじ1', 'ごま油 小さじ1'],
-    western: ['塩・こしょう 少々', 'オリーブオイル 小さじ1'],
-    curry: ['カレー粉 小さじ1', '塩 小さじ1/3', '水 150ml'],
-    vinegar: ['酢 大さじ1', '砂糖 小さじ2', 'しょうゆ 小さじ1'],
-    salad: ['酢 大さじ1', 'オリーブオイル 大さじ1', '塩・こしょう 少々'],
-  };
   const methods = {
-    'stir-fry': { title: `${names}の香ばし炒め`, description: '登録された食材の食感を生かして手早く仕上げます。', steps: [`${names}を食べやすい大きさに切ります。`, 'サラダ油で火の通りにくい食材から順に炒め、火が通ったらしょうゆ、塩・こしょうで味を整えます。', '器に盛り付けて完成です。'] },
-    simmer: { title: `${names}のやさしい煮込み`, description: '登録された食材のうま味を生かした煮込み料理です。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋に食材、水、しょうゆ、みりんを入れて火にかけます。', '火の通りにくい食材から加え、柔らかくなるまで煮て完成です。'] },
-    grill: { title: `${names}のこんがり焼き`, description: '登録された食材を香ばしく焼き上げます。', steps: [`${names}を食べやすい大きさに切ります。`, 'サラダ油をひいたフライパンで焼き、塩・こしょうをふります。', '裏返して中まで火を通し、器に盛り付けます。'] },
-    steam: { title: `${names}のふっくら蒸し`, description: '登録された食材の味を生かした蒸し料理です。', steps: [`${names}を火が通りやすい大きさに切ります。`, 'フライパンに食材、水を入れてふたをし、中火で蒸します。', '中まで火が通ったら塩で味を整えて完成です。'] },
-    soup: { title: `${names}の具だくさんスープ`, description: '登録された食材のうま味を生かしたスープです。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋に食材、水、塩を入れて火にかけます。', '火の通りにくい食材から加えて柔らかくなるまで煮て、こしょうで味を整えます。'] },
-    japanese: { title: `${names}の和風仕立て`, description: '登録された食材を和風の味付けで仕上げます。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋に食材、水、しょうゆ、みりんを入れて温めます。', '食材に火が通るまで煮含めて完成です。'] },
-    chinese: { title: `${names}の中華風香味仕立て`, description: '登録された食材を中華風の味付けで仕上げます。', steps: [`${names}を食べやすい大きさに切ります。`, '火の通りにくい食材から炒め、鶏ガラスープの素としょうゆで味を整えます。', '中まで火が通ったらごま油を回しかけて完成です。'] },
-    korean: { title: `${names}の韓国風仕立て`, description: '登録された食材を甘辛く仕上げます。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋に食材、水、しょうゆ、砂糖を入れて火にかけます。', '食材に火が通るまで煮込み、仕上げにごま油を加えます。'] },
-    western: { title: `${names}の洋風仕立て`, description: '登録された食材を洋風の味付けで仕上げます。', steps: [`${names}を食べやすい大きさに切ります。`, 'オリーブオイルで食材を焼くか煮て、塩・こしょうで味を整えます。', 'すべての食材に火が通ったら器に盛り付けます。'] },
-    curry: { title: `${names}のカレー仕立て`, description: '登録された食材をスパイシーな味付けで仕上げます。', steps: [`${names}を食べやすい大きさに切ります。`, '鍋で食材を加熱し、水とカレー粉を加えます。', '食材が柔らかくなるまで煮込み、塩で味を整えます。'] },
-    vinegar: { title: `${names}のさっぱり仕立て`, description: '酢の風味を生かしたさっぱり味の一皿です。', steps: [`${names}を食べやすい大きさに切ります。`, '肉・魚介・卵を含む場合は中まで加熱します。', '酢、砂糖、しょうゆを混ぜて加え、全体に絡めて完成です。'] },
-    salad: { title: `${names}の彩りサラダ`, description: '登録された食材をさっぱりしたドレッシングで楽しめます。', steps: [`${names}を食べやすい大きさに切ります。`, '肉・魚介・卵を含む場合は中まで加熱し、粗熱を取ります。', '酢、オリーブオイル、塩・こしょうを混ぜて食材と和えます。'] },
+    'stir-fry': [
+      { id: 'soy-glaze', title: `${names}の甘辛しょうゆ炒め`, description: 'しょうゆとみりんの甘辛味をからめた、ごはんに合う炒め物です。', seasonings: ['しょうゆ 大さじ1', 'みりん 大さじ1', 'サラダ油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'サラダ油で火の通りにくい食材から炒め、火が通ったらしょうゆとみりんを加えます。', '汁気を飛ばしながら全体に味をからめて完成です。'] },
+      { id: 'pepper-stir-fry', title: `${names}の塩こしょう炒め`, description: '素材の味を引き立てる、シンプルで香ばしい炒め物です。', seasonings: ['塩 小さじ1/3', '粗びきこしょう 少々', 'サラダ油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'サラダ油を熱し、火の通りにくい食材から順に炒めます。', '全体に火が通ったら塩と粗びきこしょうで味を整えます。'] },
+      { id: 'miso-stir-fry', title: `${names}のみそ炒め`, description: 'コクのあるみそだれをまとわせた、風味豊かな一皿です。', seasonings: ['みそ 大さじ1', 'みりん 大さじ1', 'サラダ油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'みそとみりんを混ぜておきます。', 'サラダ油で食材を炒め、火が通ったらみそだれを加えて手早くからめます。'] },
+    ],
+    simmer: [
+      { id: 'simmer-sweet-soy', title: `${names}の照り煮`, description: 'しょうゆとみりんを煮からめた、つやのある甘辛煮です。', seasonings: ['しょうゆ 大さじ1', 'みりん 大さじ1', '水 100ml'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水、しょうゆ、みりんを煮立て、火の通りにくい食材から入れます。', 'ふたをして火が通るまで煮て、最後に煮汁をからめます。'] },
+      { id: 'simmer-ginger', title: `${names}のしょうが煮`, description: 'しょうがの香りをきかせた、すっきり味の煮物です。', seasonings: ['しょうが 小さじ1', 'しょうゆ 大さじ1', '水 120ml'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水、しょうゆ、しょうがを入れて煮立てます。', '食材を加えてふたをし、中まで火が通るまで煮含めます。'] },
+      { id: 'simmer-miso', title: `${names}のみそ煮`, description: 'みそのうま味が食材になじむ、ほっとする味わいです。', seasonings: ['みそ 大さじ1', 'みりん 大さじ1', '水 150ml'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水とみりんを入れて煮立て、火の通りにくい食材から加えます。', '火が通ったらみそを溶き入れ、弱火で味をなじませます。'] },
+    ],
+    grill: [
+      { id: 'grill-salt', title: `${names}の香ばし塩焼き`, description: '表面をこんがり焼き、塩で素材のおいしさを引き出します。', seasonings: ['塩 小さじ1/3', 'サラダ油 小さじ1'], steps: [`${names}の水気を拭き、食べやすい大きさに切ります。`, 'サラダ油を熱したフライパンに並べ、塩をふって焼きます。', '裏返して中まで火を通し、香ばしい焼き色がついたら完成です。'] },
+      { id: 'grill-teriyaki', title: `${names}の照り焼き`, description: '甘辛いたれをからめて、つやよく焼き上げます。', seasonings: ['しょうゆ 大さじ1', 'みりん 大さじ1', '砂糖 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'フライパンで両面を焼き、火の通りにくいものはふたをして中まで加熱します。', 'しょうゆ、みりん、砂糖を加え、煮詰めながら全体にからめます。'] },
+      { id: 'grill-butter-soy', title: `${names}のバターしょうゆ焼き`, description: 'バターのコクとしょうゆの香ばしさが楽しめます。', seasonings: ['バター 10g', 'しょうゆ 小さじ2', 'こしょう 少々'], steps: [`${names}を食べやすい大きさに切ります。`, 'フライパンで両面を焼き、ふたをして中まで火を通します。', 'バターとしょうゆを加えて手早くからめ、こしょうをふります。'] },
+    ],
+    steam: [
+      { id: 'steam-sake', title: `${names}の酒蒸し`, description: '酒蒸しにして、食材のうま味を閉じ込めます。', seasonings: ['酒 大さじ2', '塩 少々', '水 大さじ2'], steps: [`${names}を火が通りやすい大きさに切ります。`, 'フライパンに食材、水、酒、塩を入れてふたをします。', '中火で蒸し、中まで火が通ったら蒸し汁ごと盛り付けます。'] },
+      { id: 'steam-sesame', title: `${names}のごま風味蒸し`, description: 'ふっくら蒸した食材に、ごま油の香りを添えます。', seasonings: ['塩 小さじ1/3', 'ごま油 小さじ1', '水 大さじ2'], steps: [`${names}を火が通りやすい大きさに切ります。`, 'フライパンに食材と水を入れてふたをし、中火で蒸します。', '中まで火が通ったら塩で味を整え、ごま油を回しかけます。'] },
+      { id: 'steam-ponzu', title: `${names}のポン酢蒸し`, description: '蒸し上がりにポン酢を添えた、さっぱりした一品です。', seasonings: ['ポン酢 大さじ1', '酒 大さじ1', '水 大さじ2'], steps: [`${names}を火が通りやすい大きさに切ります。`, 'フライパンに食材、水、酒を入れてふたをし、蒸し煮にします。', '中まで火が通ったら器に盛り、ポン酢をかけます。'] },
+    ],
+    soup: [
+      { id: 'soup-consomme', title: `${names}のコンソメスープ`, description: 'コンソメのうま味をきかせた、やさしい洋風スープです。', seasonings: ['水 300ml', '顆粒コンソメ 小さじ1', 'こしょう 少々'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水と顆粒コンソメを入れて煮立て、火の通りにくい食材から加えます。', 'すべてに火が通るまで煮て、こしょうで味を整えます。'] },
+      { id: 'soup-miso', title: `${names}のみそ汁仕立て`, description: 'だしのうま味とみその香りを楽しむ具だくさん汁です。', seasonings: ['水 300ml', '顆粒だし 小さじ1/2', 'みそ 大さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水と顆粒だしを入れて煮立て、火の通りにくい食材から煮ます。', '火が通ったら弱火にし、みそを溶き入れて沸騰直前で火を止めます。'] },
+      { id: 'soup-chicken', title: `${names}の中華スープ`, description: '鶏ガラだしとごま油が香る、満足感のあるスープです。', seasonings: ['水 300ml', '鶏ガラスープの素 小さじ1', 'ごま油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水と鶏ガラスープの素を入れて煮立て、食材を加えます。', '中まで火が通ったらごま油を加えて仕上げます。'] },
+    ],
+    japanese: [
+      { id: 'japanese-dashi', title: `${names}のだし煮`, description: 'だしの香りを含ませた、素材を味わう和風の煮物です。', seasonings: ['水 150ml', '顆粒だし 小さじ1/2', 'しょうゆ 小さじ2'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水、顆粒だし、しょうゆを入れて煮立てます。', '食材を加えてふたをし、中まで火が通るまで煮含めます。'] },
+      { id: 'japanese-miso', title: `${names}のみそ仕立て`, description: 'みそのまろやかなコクを生かした和風の一皿です。', seasonings: ['みそ 大さじ1', 'みりん 小さじ2', '水 100ml'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水とみりんを入れて食材を煮ます。', '火が通ったらみそを溶き入れ、弱火で味をなじませます。'] },
+      { id: 'japanese-sweet-vinegar', title: `${names}の和風甘酢あん`, description: 'だしの風味を含んだ甘酢をからめて仕上げます。', seasonings: ['酢 大さじ1', 'しょうゆ 小さじ2', '砂糖 小さじ2'], steps: [`${names}を食べやすい大きさに切り、火の通りにくい順に加熱します。`, '酢、しょうゆ、砂糖を混ぜて加えます。', '弱火で全体にたれをからめ、味がなじんだら盛り付けます。'] },
+    ],
+    chinese: [
+      { id: 'chinese-garlic', title: `${names}のにんにくしょうゆ炒め`, description: 'にんにくの香りとしょうゆの香ばしさが食欲をそそります。', seasonings: ['にんにく 小さじ1/2', 'しょうゆ 小さじ2', 'ごま油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'ごま油でにんにくを弱火で熱し、香りが立ったら食材を炒めます。', '中まで火が通ったらしょうゆを加えて手早くからめます。'] },
+      { id: 'chinese-sesame', title: `${names}のごま塩炒め`, description: 'ごま油と白ごまの香りをきかせた中華風の炒め物です。', seasonings: ['鶏ガラスープの素 小さじ1/2', '塩 少々', 'ごま油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'ごま油で火の通りにくい食材から順に炒めます。', '鶏ガラスープの素と塩で味を整え、全体に火が通ったら完成です。'] },
+      { id: 'chinese-sweet-sour', title: `${names}の中華甘酢炒め`, description: '酢と砂糖の甘酸っぱい味が食材によく合います。', seasonings: ['酢 大さじ1', '砂糖 小さじ2', 'しょうゆ 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, '火の通りにくい食材から順に炒め、中まで火を通します。', '酢、砂糖、しょうゆを混ぜて加え、全体に照りが出るまでからめます。'] },
+    ],
+    korean: [
+      { id: 'korean-sweet-spicy', title: `${names}の甘辛コチュジャン炒め`, description: 'コチュジャンのうま辛味をからめた韓国風の一皿です。', seasonings: ['コチュジャン 小さじ2', 'しょうゆ 小さじ1', 'ごま油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'ごま油で食材を炒め、火の通りにくいものはふたをして加熱します。', 'コチュジャンとしょうゆを加え、全体にからめます。'] },
+      { id: 'korean-sesame-soy', title: `${names}の韓国風ごましょうゆ和え`, description: 'ごま油としょうゆをきかせた香ばしい味付けです。', seasonings: ['しょうゆ 小さじ2', 'ごま油 小さじ1', '白ごま 小さじ1'], steps: [`${names}を食べやすい大きさに切り、必要な食材は中まで加熱します。`, 'しょうゆとごま油を混ぜてたれを作ります。', '食材が熱いうちにたれで和え、白ごまをふります。'] },
+      { id: 'korean-vinegar', title: `${names}の韓国風さっぱりだれ`, description: '酢の酸味とごま油の香りを合わせた、軽やかな味わいです。', seasonings: ['酢 大さじ1', 'しょうゆ 小さじ1', 'ごま油 小さじ1'], steps: [`${names}を食べやすい大きさに切り、必要な食材は中まで加熱します。`, '酢、しょうゆ、ごま油を混ぜてたれを作ります。', '食材にたれをからめ、味がなじんだら盛り付けます。'] },
+    ],
+    western: [
+      { id: 'western-butter', title: `${names}のバターソテー`, description: 'バターのコクをまとわせて香ばしく焼き上げます。', seasonings: ['バター 10g', '塩 小さじ1/3', 'こしょう 少々'], steps: [`${names}を食べやすい大きさに切ります。`, 'フライパンで火の通りにくい食材から焼きます。', '中まで火が通ったらバターを加え、塩・こしょうで味を整えます。'] },
+      { id: 'western-herb', title: `${names}のハーブ風味ソテー`, description: 'オリーブオイルとハーブが香る、シンプルな洋風ソテーです。', seasonings: ['オリーブオイル 大さじ1', '乾燥ハーブ 小さじ1/2', '塩・こしょう 少々'], steps: [`${names}を食べやすい大きさに切ります。`, 'オリーブオイルで食材を焼き、火の通りにくいものはふたをして加熱します。', '中まで火が通ったら乾燥ハーブ、塩、こしょうをふります。'] },
+      { id: 'western-simmer', title: `${names}のハーブ蒸し煮`, description: 'オリーブオイルとハーブで香りよく蒸し煮にします。', seasonings: ['オリーブオイル 小さじ1', '水 50ml', '乾燥ハーブ 少々', '塩 少々'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋で食材をオリーブオイルで軽く焼き、水と乾燥ハーブを加えます。', 'ふたをして中まで火を通し、塩で味を整えます。'] },
+    ],
+    curry: [
+      { id: 'curry-mild', title: `${names}のまろやかカレー煮`, description: 'カレー粉の香りを生かした、手軽なカレー風味の煮込みです。', seasonings: ['カレー粉 小さじ1', '水 150ml', '塩 小さじ1/3'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋で食材を軽く炒め、水とカレー粉を加えます。', 'ふたをして中まで火を通し、塩で味を整えます。'] },
+      { id: 'curry-soy', title: `${names}の和風カレー炒め`, description: 'カレーの香りにしょうゆのうま味を合わせました。', seasonings: ['カレー粉 小さじ1', 'しょうゆ 小さじ2', 'サラダ油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'サラダ油で火の通りにくい食材から炒めます。', '中まで火が通ったらカレー粉としょうゆを加えて全体にからめます。'] },
+      { id: 'curry-soup', title: `${names}のスパイススープ`, description: 'カレー粉をきかせた、さらりと食べやすいスープです。', seasonings: ['水 300ml', 'カレー粉 小さじ1', '顆粒コンソメ 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋で食材を軽く炒め、水と顆粒コンソメを加えます。', 'カレー粉を溶き入れて煮立て、食材に火が通ったら完成です。'] },
+    ],
+    vinegar: [
+      { id: 'vinegar-sweet-sour', title: `${names}の甘酢炒め`, description: '甘酸っぱいたれをからめた、後味さっぱりの炒め物です。', seasonings: ['酢 大さじ1', '砂糖 小さじ2', 'しょうゆ 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'サラダ油で食材を炒め、火の通りにくいものは中まで加熱します。', '酢、砂糖、しょうゆを加え、たれが全体にからんだら完成です。'] },
+      { id: 'vinegar-ponzu', title: `${names}のポン酢照り焼き`, description: 'ポン酢の酸味を生かした、さっぱり味の照り焼きです。', seasonings: ['ポン酢 大さじ1', 'みりん 大さじ1', 'サラダ油 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, 'サラダ油で両面を焼き、ふたをして中まで火を通します。', 'ポン酢とみりんを加えて煮からめます。'] },
+      { id: 'vinegar-simmer', title: `${names}のさっぱり酢煮`, description: '酢を加えて煮ることで、軽やかな味に仕上げます。', seasonings: ['酢 大さじ1', 'しょうゆ 大さじ1', '水 100ml'], steps: [`${names}を食べやすい大きさに切ります。`, '鍋に水、酢、しょうゆを入れて煮立てます。', '食材を加えて中まで火が通るまで煮込み、煮汁をからめます。'] },
+    ],
+    salad: [
+      { id: 'salad-vinaigrette', title: `${names}のフレンチサラダ`, description: '酢とオリーブオイルのシンプルなドレッシングで味わいます。', seasonings: ['酢 大さじ1', 'オリーブオイル 大さじ1', '塩・こしょう 少々'], steps: [`${names}を食べやすい大きさに切ります。`, '肉・魚介・卵が入る場合は別に中まで加熱し、粗熱を取ります。', '酢、オリーブオイル、塩、こしょうを混ぜ、食材と和えます。'] },
+      { id: 'salad-sesame', title: `${names}のごまドレッシングサラダ`, description: 'ごま油としょうゆの香ばしいドレッシングで仕上げます。', seasonings: ['しょうゆ 小さじ2', '酢 小さじ2', 'ごま油 小さじ1', '白ごま 小さじ1'], steps: [`${names}を食べやすい大きさに切ります。`, '肉・魚介・卵が入る場合は中まで加熱し、粗熱を取ります。', 'しょうゆ、酢、ごま油を混ぜて和え、白ごまをふります。'] },
+      { id: 'salad-sweet-vinegar', title: `${names}のさっぱり甘酢和え`, description: '甘酢をなじませた、箸休めにもぴったりの一皿です。', seasonings: ['酢 大さじ1', '砂糖 小さじ2', '塩 少々'], steps: [`${names}を食べやすい大きさに切ります。`, '肉・魚介・卵が入る場合は中まで加熱し、粗熱を取ります。', '酢、砂糖、塩を混ぜて食材と和え、少し置いて味をなじませます。'] },
+    ],
   };
-  const recipe = methods[cookingStyle] || methods.simmer;
-  return { ...recipe, emoji, seasonings: seasoningsByStyle[cookingStyle] || seasoningsByStyle.simmer, time: minutes === '10分以内' ? '10分' : minutes === '30分以内' ? '25分' : '15分' };
+  const templates = methods[cookingStyle] || methods.simmer;
+  const recentTemplateIds = new Set(history.filter((item) => item.cookingStyle === cookingStyle).slice(0, 3).map((item) => item.templateId).filter(Boolean));
+  const availableTemplates = templates.filter((template) => !recentTemplateIds.has(template.id));
+  const recipe = (availableTemplates.length ? availableTemplates : templates)[Math.floor(Math.random() * (availableTemplates.length || templates.length))];
+  return { ...recipe, templateId: recipe.id, emoji, time: minutes === '10分以内' ? '10分' : minutes === '30分以内' ? '25分' : '15分' };
 };
 const pickRecipe = (ingredients) => {
   const joined = ingredients.join(' ');
@@ -105,7 +142,7 @@ function App() {
     setGenerating(true); setMessage('');
     const cookingStyle = chooseCookingStyle(history, ingredients);
     let recipe;
-    try { recipe = await requestRecipe(ingredients, meal, minutes, cookingStyle.id); } catch { recipe = buildIngredientRecipe(ingredients, minutes, cookingStyle.id); }
+    try { recipe = await requestRecipe(ingredients, meal, minutes, cookingStyle.id); } catch { recipe = buildIngredientRecipe(ingredients, minutes, cookingStyle.id, history); }
     const item = { ...recipe, cookingStyle: cookingStyle.id, id: Date.now(), ingredients, meal, minutes, createdAt: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) };
     setSuggestion(item); setHistory((prev) => [item, ...prev].slice(0, 12)); setScreen('suggestion'); setMessage(''); sendToSheet(item);
     setGenerating(false);
