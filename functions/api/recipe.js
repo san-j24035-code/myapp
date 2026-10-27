@@ -28,13 +28,11 @@ export async function onRequestPost({ request, env }) {
   try { input = await request.json(); } catch { return json({ error: '入力形式が正しくありません。' }, 400); }
   const ingredients = Array.isArray(input.ingredients) ? input.ingredients.map(String).map((value) => value.trim()).filter(Boolean).slice(0, 12) : [];
   if (!ingredients.length) return json({ error: '食材を1つ以上入力してください。' }, 400);
-  if (!env.GEMINI_API_KEY) return json({ error: 'AI_API_KEY_NOT_CONFIGURED' }, 503);
+  if (!env.OPENROUTER_API_KEY) return json({ error: 'OpenRouter APIキーが設定されていません。Cloudflareの環境変数 OPENROUTER_API_KEY を設定してください。' }, 503);
   const cookingStyle = cookingStyleLabels[input.cookingStyle] || '食材に合う調理法';
 
-  const model = env.GEMINI_MODEL || 'gemini-2.0-flash';
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
+  const model = env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
   const prompt = [
-    'あなたは日本の家庭料理に詳しい献立AIです。',
     `次の入力食材をすべて料理の主役または具材として使ってください: ${ingredients.join('、')}`,
     `食べる時間: ${input.meal || '夕食'}。調理時間: ${input.minutes || '10〜15分'}。`,
     `今回の料理ジャンル・調理法は「${cookingStyle}」です。料理名と手順に反映してください。`,
@@ -47,14 +45,29 @@ export async function onRequestPost({ request, env }) {
   ].join('\n');
 
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: 'application/json' } }),
+      headers: {
+        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: 'あなたは日本の家庭料理に詳しい献立AIです。安全で実際に作れるレシピを提案してください。' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' },
+      }),
     });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) return json({ error: 'OpenRouterの認証に失敗しました。APIキーを確認してください。' }, 502);
+      if (response.status === 402 || response.status === 429) return json({ error: 'OpenRouterの利用上限に達したか、利用可能なクレジットがありません。' }, 502);
+      return json({ error: 'OpenRouterからレシピを取得できませんでした。時間をおいて再度お試しください。' }, 502);
+    }
     const data = await response.json();
-    if (!response.ok) return json({ error: 'AIサービスに接続できませんでした。' }, 502);
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = data.choices?.[0]?.message?.content;
     const recipe = text ? extractJson(text) : null;
     if (!recipe?.title || !Array.isArray(recipe.steps) || !recipe.steps.length) return json({ error: 'AIの提案形式が正しくありません。' }, 502);
     const returnedIngredients = Array.isArray(recipe.ingredients) ? recipe.ingredients.map((value) => String(value).trim()) : [];
@@ -63,5 +76,5 @@ export async function onRequestPost({ request, env }) {
       return json({ error: 'AIが未登録の食材を提案したため、レシピを作り直してください。' }, 502);
     }
     return json({ recipe: { title: String(recipe.title), emoji: String(recipe.emoji || '🍳'), time: String(recipe.time || input.minutes || '20分'), description: String(recipe.description || ''), seasonings: Array.isArray(recipe.seasonings) ? recipe.seasonings.slice(0, 8).map(String) : [], steps: recipe.steps.slice(0, 5).map(String) } });
-  } catch { return json({ error: 'AI提案の取得に失敗しました。' }, 502); }
+  } catch { return json({ error: 'AI提案の取得または解析に失敗しました。時間をおいて再度お試しください。' }, 502); }
 }
