@@ -35,14 +35,15 @@ export async function onRequestPost({ request, env }) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
   const prompt = [
     'あなたは日本の家庭料理に詳しい献立AIです。',
-    `必ず次の入力食材をすべて主役または具材として使ってください: ${ingredients.join('、')}`,
+    `次の入力食材をすべて料理の主役または具材として使ってください: ${ingredients.join('、')}`,
     `食べる時間: ${input.meal || '夕食'}。調理時間: ${input.minutes || '10〜15分'}。`,
     `今回の料理ジャンル・調理法は「${cookingStyle}」です。料理名と手順に反映してください。`,
-    `具材として使えるのは入力食材だけです。入力食材の名前を一字一句変えずに ingredients 配列へすべて記載し、それ以外の具材・調味料・香辛料・油は追加しないでください。水だけは調理に必要な場合に限り使用できます。`,
-    'タイトル、説明、手順にも入力にない食材や調味料を記載しないでください。食材に合う料理に調整し、生食できない肉・魚介・卵は必ず中まで加熱してください。',
+    '入力食材以外の食材（野菜、肉、魚、卵、豆腐など）は追加しないでください。一方、塩、こしょう、しょうゆ、みそ、砂糖、酢、酒、みりん、油、ごま油、バター、にんにく、しょうが、だし、鶏ガラスープの素、カレー粉など家庭にある調味料・香辛料は、料理に合うものを必要な分だけ追加して構いません。水も必要に応じて使えます。',
+    'ingredients 配列には入力された食材だけを名前を変えずにすべて記載してください。追加する調味料はseasonings配列に「調味料名 分量」の形式で記載し、手順にも使うタイミングを明記してください。調味料を不必要に多く使わず、味の方向性に合う組み合わせにしてください。',
+    '分量は2人分を目安に、調味料は小さじ・大さじ・ml・少々などで具体的に示してください。食材に合う自然な料理にし、指定時間内に作れる現実的な手順にしてください。生食できない肉・魚介・卵は必ず中まで加熱してください。',
     'レシピサイトの掲載文のように、家庭で作る場面が想像できる自然な日本語で書いてください。手順は下ごしらえ、加熱、味付け、盛り付けの順に3〜5個にしてください。',
     '次のJSONだけを返してください。説明文やMarkdownは不要です。',
-    `{"ingredients":${JSON.stringify(ingredients)},"title":"料理名","emoji":"絵文字1つ","time":"調理時間","description":"料理の説明","steps":["手順1","手順2","手順3"]}`,
+    `{"ingredients":${JSON.stringify(ingredients)},"seasonings":["しょうゆ 小さじ1","みりん 小さじ1"],"title":"料理名","emoji":"絵文字1つ","time":"調理時間","description":"料理の説明","steps":["手順1","手順2","手順3"]}`,
   ].join('\n');
 
   try {
@@ -61,6 +62,6 @@ export async function onRequestPost({ request, env }) {
     if (returnedIngredients.length !== requestedIngredients.length || new Set(returnedIngredients).size !== requestedIngredients.length || requestedIngredients.some((value) => !returnedIngredients.includes(value))) {
       return json({ error: 'AIが未登録の食材を提案したため、レシピを作り直してください。' }, 502);
     }
-    return json({ recipe: { title: String(recipe.title), emoji: String(recipe.emoji || '🍳'), time: String(recipe.time || input.minutes || '20分'), description: String(recipe.description || ''), steps: recipe.steps.slice(0, 5).map(String) } });
+    return json({ recipe: { title: String(recipe.title), emoji: String(recipe.emoji || '🍳'), time: String(recipe.time || input.minutes || '20分'), description: String(recipe.description || ''), seasonings: Array.isArray(recipe.seasonings) ? recipe.seasonings.slice(0, 8).map(String) : [], steps: recipe.steps.slice(0, 5).map(String) } });
   } catch { return json({ error: 'AI提案の取得に失敗しました。' }, 502); }
 }
